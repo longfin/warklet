@@ -7,9 +7,4 @@
   :plugins [[lein-beanstalk "0.2.2"]
             [swank-clojure "1.3.3"]]
   :ring {:handler warklet.server/handler}
-  :main warklet.server
-  :cljsbuild {
-              :builds [{:source-path "src"
-                        :compiler {:output-to "resources/public/js/main.js"
-                                   :optimizations :whitespace
-                                   :pretty-print true}}]})
+  :main warklet.server)
