@@ -1,11 +1,12 @@
 (ns warklet.views.js
   (:use [noir.core :only [defpage]]
-        [noir.request :only [ring-request]]))
+        [noir.request :only [ring-request]]
+        [clojure.java.io :only [resource]]))
 
 (defpage "/users/:id/bookmark" {user-id :id}
   {:headers {"content-type" "text/javascript; charset=UTF-8"}
    :body (clojure.string/replace
-          (slurp "src/warklet/template/bookmark.js")
+          (slurp (resource "warklet/template/bookmark.js"))
           "{{user-id}}"
           user-id)})
 
