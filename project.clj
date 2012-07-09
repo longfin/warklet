@@ -4,6 +4,7 @@
                  [noir "1.2.2"]
                  [enlive "1.0.0"]]
   :plugins [[lein-beanstalk "0.2.2"]
+            [lein-ring "0.7.1"]
             [swank-clojure "1.3.3"]]
   :ring {:handler warklet.server/handler}
   :main warklet.server)
