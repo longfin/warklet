@@ -19,31 +19,47 @@
 (when *db*
   (mg/set-db! *db*))
 
+(defprotocol IDocumentable
+  "Representable protocol for mongodb's document name"
+  (docname [e]))
+
 (defprotocol IEntity
-  "Interface(protocol) of whole entity."
+  "Protocol of whole entity."
   (add! [e])
   (edit! [e])
   (remove! [e]))
 
+(extend-protocol IDocumentable
+  java.lang.String
+  (docname [e]
+    (lower-case e))
+  clojure.lang.Symbol
+  (docname [e]
+    (docname (str e)))
+  java.lang.Class
+  (docname [e]
+    (let [fullname (.getName e)]
+      (docname (last (split fullname #"\.")))))
+  warklet.model.IEntity
+  (docname [e]
+    (docname (type e))))
+         
+
 ;; default methods...
 (defn- add! [e]
-  (let [fullname (.getName (type e))
-        name (lower-case (last (split fullname #"\.")))]
-    (mc/insert name e)))
+  (mc/insert (docname e) e))
 
 (defn- edit! [e]
-    (mc/update name {:_id (:id e)} e))
+  (mc/update (docname e) {:_id (:id e)} e))
 
 (defn- remove! [e]
-  (let [fullname (.getName (type e))
-        name (lower-case (last (split fullname #"\.")))
-        id (or (:_id e)
+  (let [id (or (:_id e)
                (ObjectId. e))]
-    (mc/remove name {:_id id})))
+    (mc/remove (docname e) {:_id id})))
 
 (defmacro defgetters [type]
   "Helper macro to make typed-getters.(get-<type>-by-id, get-<type>)"
-  (let [name (lower-case (str type))
+  (let [name (docname type)
         map-> (symbol (str "map->" type))
         fn-get-by-id (symbol (str "get-" name "-by-id"))
         fn-get (symbol (str "get-" name))]
