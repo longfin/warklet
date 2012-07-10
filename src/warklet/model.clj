@@ -1,6 +1,8 @@
 (ns warklet.model
+  (:use [clojure.string :only [lower-case split]])
   (:require [monger.core :as mg]
-            [monger.collection :as mc]))
+            [monger.collection :as mc])
+  (:import [org.bson.types ObjectId]))
 
 (defn connect [& url]
   (if url
@@ -16,21 +18,47 @@
 (when *db*
   (mg/set-db! *db*))
 
-(defmacro defcrud [name]
-  `(do
-     (intern ~*ns*
-             '~'get-by-id
-             (fn [~'id]
-               (mc/find-one-as-map ~name {:_id (ObjectId. ~'id)})))
-     (intern ~*ns*
-             '~'get-by
-             (fn [~'p]
-               (mc/find-one-as-map ~name ~'p)))
-     (intern ~*ns* '~'add! (fn [~'p]
-                             (mc/insert ~name ~'p)))
-     (intern ~*ns* '~'edit! (fn [~'p]
-                              (mc/update ~name {:_id (:id ~'p)} ~'p)))
-     (intern ~*ns* '~'remove! (fn [~'arg]
-                                (let [~'id (or (:_id ~'arg) (ObjectId. ~'arg))]
-                                  (mc/remove ~name {:_id ~'id}))))))
-     
+(defprotocol IEntity
+  (add! [e])
+  (edit! [e])
+  (remove! [e]))
+
+(defn- add! [e]
+  (let [fullname (.getName (type e))
+        name (lower-case (last (split fullname #"\.")))]
+    (mc/insert name e)))
+
+(defn- edit! [e]
+    (mc/update name {:_id (:id e)} e))
+
+(defn- remove! [e]
+  (let [fullname (.getName (type e))
+        name (lower-case (last (split fullname #"\.")))
+        id (or (:_id e)
+               (ObjectId. e))]
+    (mc/remove name {:_id id})))
+
+(defmacro defgetters [type]
+  (let [name (lower-case (str type))
+        map-> (symbol (str "map->" type))
+        fn-get-by-id (symbol (str "get-" name "-by-id"))
+        fn-get (symbol (str "get-" name))]
+    `(do
+       (defn ~fn-get [p#]
+         (let [m# (mc/find-one-as-map ~name p#)]
+           (when m#
+             (~map-> m#))))
+       (defn ~fn-get-by-id [id#]
+         (~fn-get {:_id (ObjectId. id#)})))))
+
+  
+(defrecord User [email
+                 password
+                 created-at
+                 fb-access-token
+                 tw-access-token]
+  IEntity
+  (add! [e] add!)
+  (edit! [e] edit!)
+  (remove! [e] remove!))
+(defgetters User)
