@@ -5,6 +5,7 @@
   (:import [org.bson.types ObjectId]))
 
 (defn connect [& url]
+  "Connect to specified url. if url doesn't exists, lookup environment and localhost"
   (if url
     (mg/connect-via-uri! url)
     (let [mongodb-url (or (System/getenv "MONGOHQ_URL")   ;; for heroku
@@ -19,10 +20,12 @@
   (mg/set-db! *db*))
 
 (defprotocol IEntity
+  "Interface(protocol) of whole entity."
   (add! [e])
   (edit! [e])
   (remove! [e]))
 
+;; default methods...
 (defn- add! [e]
   (let [fullname (.getName (type e))
         name (lower-case (last (split fullname #"\.")))]
@@ -39,6 +42,7 @@
     (mc/remove name {:_id id})))
 
 (defmacro defgetters [type]
+  "Helper macro to make typed-getters.(get-<type>-by-id, get-<type>)"
   (let [name (lower-case (str type))
         map-> (symbol (str "map->" type))
         fn-get-by-id (symbol (str "get-" name "-by-id"))
