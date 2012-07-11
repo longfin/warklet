@@ -39,23 +39,17 @@
   java.lang.Class
   (docname [e]
     (let [fullname (.getName e)]
-      (docname (last (split fullname #"\.")))))
-  warklet.model.IEntity
-  (docname [e]
-    (docname (type e))))
-         
+      (docname (last (split fullname #"\."))))))
 
-;; default methods...
-(defn- add! [e]
-  (mc/insert (docname e) e))
-
-(defn- edit! [e]
-  (mc/update (docname e) {:_id (:id e)} e))
-
-(defn- remove! [e]
-  (let [id (or (:_id e)
-               (ObjectId. e))]
-    (mc/remove (docname e) {:_id id})))
+(def ^{:private true}  entity-fns
+  {:add! (fn [e]
+           (mc/insert (docname (type e)) e))
+   :edit! (fn [e]
+            (mc/update (docname (type e)) {:_id (:id e)} e))
+   :remove! (fn [e]
+              (let [id (or (:_id e)
+                           (ObjectId. e))]
+                (mc/remove (docname (type e)) {:_id id})))})
 
 (defmacro defgetters [type]
   "Helper macro to make typed-getters.(get-<type>-by-id, get-<type>)"
@@ -69,16 +63,18 @@
            (when m#
              (~map-> m#))))
        (defn ~fn-get-by-id [id#]
-         (~fn-get {:_id (ObjectId. id#)})))))
-
+         (try
+           (~fn-get {:_id (ObjectId. id#)})
+           (catch java.lang.IllegalArgumentException iae#
+               nil))))))
   
 (defrecord User [email
                  password
                  created-at
                  fb-access-token
-                 tw-access-token]
+                 tw-access-token])
+(extend User
   IEntity
-  (add! [e] add!)
-  (edit! [e] edit!)
-  (remove! [e] remove!))
+  entity-fns)
+
 (defgetters User)
