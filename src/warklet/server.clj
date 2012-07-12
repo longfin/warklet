@@ -1,7 +1,7 @@
 (ns warklet.server
   (:require [noir.server :as server]
-            [warklet.views.js]
-            [warklet.views.index]))
+            [warklet.views.index]
+            [warklet.views.user]))
 
 (def handler (server/gen-handler {:mode :dev
                                   :ns 'warklet.server}))

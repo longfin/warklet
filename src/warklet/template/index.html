@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>warklet, share via bookmarklet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+    </style>
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/">Warklet</a>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <h1>Add bookmark and Share link.</h1>
+      <form id="entrance-form" class="well" method="post" action="">
+        <label>email</label>
+        <input name="email" type="email" class="span3" placeholder="somebody@somewhere.com" />
+        <label>password</label>
+        <input name="password" type="password" class="span3" pattern=".{6,}" />
+        <span class="help-block"></span>
+        <button type="submit" class="btn">Start</button>
+      </form>
+    </div>
+  </body>
+</html>

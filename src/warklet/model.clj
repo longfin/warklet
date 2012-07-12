@@ -43,7 +43,7 @@
 
 (def ^{:private true}  entity-fns
   {:add! (fn [e]
-           (mc/insert (docname (type e)) e))
+           (mc/insert-and-return (docname (type e)) e))
    :edit! (fn [e]
             (mc/update (docname (type e)) {:_id (:_id e)} e))
    :remove! (fn [e]
