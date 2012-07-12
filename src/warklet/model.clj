@@ -68,11 +68,16 @@
            (catch java.lang.IllegalArgumentException iae#
                nil))))))
   
-(defrecord User [email
+(defrecord User [_id
+                 email
                  password
                  created-at
                  fb-access-token
-                 tw-access-token])
+                 tw-access-token]
+  Object
+  (toString [_]
+    (format "User<_id=%s, email=%s>" _id email)))
+
 (extend User
   IEntity
   entity-fns)
