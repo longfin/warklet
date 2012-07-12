@@ -45,11 +45,11 @@
   {:add! (fn [e]
            (mc/insert (docname (type e)) e))
    :edit! (fn [e]
-            (mc/update (docname (type e)) {:_id (:id e)} e))
+            (mc/update (docname (type e)) {:_id (:_id e)} e))
    :remove! (fn [e]
               (let [id (or (:_id e)
                            (ObjectId. e))]
-                (mc/remove (docname (type e)) {:_id id})))})
+                (mc/remove-by-id (docname (type e)) id)))})
 
 (defmacro defgetters [type]
   "Helper macro to make typed-getters.(get-<type>-by-id, get-<type>)"
@@ -83,3 +83,4 @@
   entity-fns)
 
 (defgetters User)
+(mc/ensure-index (docname User) {:email 1} {:unique true})
