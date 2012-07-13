@@ -25,7 +25,9 @@
   (let [password (hash-password (:password user))]
     (if-let [old-user (model/get-user {:email (:email user)})]
       (if (= (:password old-user) password)
-        (redirect (url-for warklet.views.user/get-user old-user))
+        (do
+          (session/put! :logined-user old-user)
+          (redirect (url-for warklet.views.user/get-user old-user)))
         (do
           (session/flash-put!
            "Email or password is incorrect. please try again")

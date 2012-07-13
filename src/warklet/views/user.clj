@@ -1,5 +1,6 @@
 (ns warklet.views.user
-  (:require [warklet.model :as model])
+  (:require [warklet.model :as model]
+            [noir.session :as session])
   (:use [clojure.java.io :only [resource]]
         [noir.core :only [defpage url-for pre-route]]
         [noir.request :only [ring-request]]
@@ -11,9 +12,14 @@
            (let [param (:params request)
                  user-id (:_id param)
                  user (model/get-user-by-id user-id)]
-             (when-not user
+             (if-not user
                {:status 404
-                :body (format "User[id: %s] doesn't exists" user-id)})))
+                :body (format "User[id: %s] doesn't exists" user-id)}
+               (let [logined-user (session/get :logined-user)]
+                 (if-not (= logined-user user)
+                   {:status 403
+                    :body "Permission denied"})))))
+                   
               
 
 (defpage get-user "/users/:_id" {user-id :_id}
@@ -27,12 +33,12 @@
     (if old-user
       {:status 400
        :body (format "Email[%s] is already registred."  email)}
-      (do
-        (let [encrypted-user (assoc user
-                               :password
-                               (hash-password (:password user)))
-              new-user (model/add! (model/map->User encrypted-user))]
-          (redirect (url-for get-user new-user)))))))
+      (let [encrypted-user (assoc user
+                             :password
+                             (hash-password (:password user)))
+            new-user (model/add! (model/map->User encrypted-user))]
+        (session/put! :logined-user new-user)
+        (redirect (url-for get-user new-user))))))
 
 (defpage delete-user [:delete "/users/:id"] {user-id :id}
   (if-let [user (model/get-user-by-id user-id)]
