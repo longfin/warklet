@@ -5,7 +5,7 @@
             [warklet.model :as model])
   (:use [noir.core :only [defpage url-for]]
         [noir.response :only [redirect]]
-        [warklet.util :only [hash-password]]
+        [warklet.util :only [hash-sha-512]]
         [warklet.views.base :only [base]]))
   
 (html/defsnippet login-form
@@ -24,7 +24,7 @@
   (index))
 
 (defpage login [:post "/login"] {:as user}
-  (let [password (hash-password (:password user))]
+  (let [password (hash-sha-512 (:password user))]
     (if-let [old-user (model/get-user {:email (:email user)})]
       (if (= (:password old-user) password)
         (do

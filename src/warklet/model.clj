@@ -1,7 +1,8 @@
 (ns warklet.model
-  (:use [clojure.string :only [lower-case split]])
   (:require [monger.core :as mg]
             [monger.collection :as mc])
+  (:use [clojure.string :only [lower-case split]]
+        [warklet.util :only [hash-sha-512]])
   (:import [org.bson.types ObjectId]))
 
 (defn connect [& url]
@@ -72,6 +73,7 @@
                  email
                  password
                  created-at
+                 access-token
                  fb-access-token
                  tw-access-token]
   Object
@@ -80,7 +82,15 @@
 
 (extend User
   IEntity
-  entity-fns)
+  (merge entity-fns
+         {:add! (fn [u]
+                  (let [encrypted-user (assoc u
+                                         :password
+                                         (hash-sha-512 (:password u))
+                                         :access-token
+                                         (hash-sha-512 (:email u)))
+                        origin-add! (:add! entity-fns)]
+                    (origin-add! encrypted-user)))}))
 
 (defgetters User)
 (mc/ensure-index (docname User) {:email 1} {:unique true})
