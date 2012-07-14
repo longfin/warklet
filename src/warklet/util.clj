@@ -1,4 +1,5 @@
 (ns warklet.util
+  (:require [net.cgrand.enlive-html :as html])
   (:use [clojure.string :only [join]]))
 
 (defn hash-password [password]
@@ -8,3 +9,11 @@
     (.update md (.getBytes salt "UTF-8"))
     (join "" (map #(Integer/toHexString (bit-and % 0xff))
                   (.digest md (.getBytes password "UTF-8"))))))
+
+(defmacro maybe-substitute
+  ([expr] `(if-let [x# ~expr] (html/substitute x#) identity))
+  ([expr & exprs] `(maybe-substitute (or ~expr ~@exprs))))
+
+(defmacro maybe-content
+  ([expr] `(if-let [x# ~expr] (html/content x#) identity))
+  ([expr & exprs] `(maybe-content (or ~expr ~@exprs))))

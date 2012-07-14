@@ -3,23 +3,25 @@
             [noir.session :as session]
             [warklet.views.user]
             [warklet.model :as model])
-  (:use [clojure.java.io :only [resource]]
-        [noir.core :only [defpage url-for]]
+  (:use [noir.core :only [defpage url-for]]
         [noir.response :only [redirect]]
-        [warklet.util :only [hash-password]]))
+        [warklet.util :only [hash-password]]
+        [warklet.views.base :only [base]]))
+  
+(html/defsnippet login-form
+  (html/html-resource "warklet/template/_login_form.html")
+  [:form]
+  [{:keys [action]}]
+  [:#entrance-form] (html/set-attr :action action))
 
-(html/deftemplate index (resource "warklet/template/index.html")
-  [ctx]
-  [:#entrance-form] (html/set-attr
-                     :action (url-for login))
-  [:#flash] (when-let [flash (:flash ctx)]
-              (html/do->
-               identity
-               (html/content flash))))
+(defn index []
+  (let [flash (session/flash-get)]
+    (base {:content (login-form {:action (url-for login)})
+           :flash flash
+           :title "Share link via bookmarklet."})))
 
 (defpage welcome "/" []
-  (let [flash (session/flash-get)]
-    (index {:flash flash})))
+  (index))
 
 (defpage login [:post "/login"] {:as user}
   (let [password (hash-password (:password user))]
