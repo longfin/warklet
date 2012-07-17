@@ -5,6 +5,7 @@
             [warklet.model :as model])
   (:use [noir.core :only [defpage url-for]]
         [noir.response :only [redirect]]
+        [warklet.global :only [*request*]]
         [warklet.util :only [hash-sha-512]]
         [warklet.views.base :only [base]]))
   
@@ -21,7 +22,9 @@
            :title "Share link via bookmarklet."})))
 
 (defpage welcome "/" []
-  (index))
+  (if-let [logined-user (session/get :logined-user)]
+    (redirect (url-for warklet.views.user/get-user logined-user))
+    (index)))
 
 (defpage login [:post "/login"] {:as user}
   (let [password (hash-sha-512 (:password user))]
@@ -35,3 +38,7 @@
            "Email or password is incorrect. please try again")
           (redirect (url-for welcome))))
       (warklet.views.user/post-user user))))
+
+(defpage logout "/logout" {:as user}
+  (session/remove! :logined-user)
+  (redirect (url-for welcome)))
