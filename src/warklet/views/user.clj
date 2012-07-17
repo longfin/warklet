@@ -48,7 +48,6 @@
                    
 (defpage get-user "/users/:_id" {user-id :_id}
   (let [user (model/get-user-by-id user-id)]
-    (print "dafdsf")
     (base {:top-right-nav (logout-li "/logout")
            :content (user-detail-div user)})))
 
