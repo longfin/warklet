@@ -1,12 +1,12 @@
 (ns warklet.util
   (:require [net.cgrand.enlive-html :as html])
-  (:use [clojure.string :only [join]]))
+  (:use [clojure.string :only [join]]
+        [warklet.config :only [hash-salt]]))
 
 (defn hash-sha-512 [message]
   (let [md (java.security.MessageDigest/getInstance "SHA-512")
-        encoder (sun.misc.BASE64Encoder.)
-        salt (System/getProperty "PARAM2" "warklet-default-salt")]
-    (.update md (.getBytes salt "UTF-8"))
+        encoder (sun.misc.BASE64Encoder.)]
+    (.update md (.getBytes hash-salt "UTF-8"))
     (join "" (map #(Integer/toHexString (bit-and % 0xff))
                   (.digest md (.getBytes message "UTF-8"))))))
 

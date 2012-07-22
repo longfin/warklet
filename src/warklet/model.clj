@@ -2,6 +2,7 @@
   (:require [monger.core :as mg]
             [monger.collection :as mc])
   (:use [clojure.string :only [lower-case split]]
+        [warklet.config :only [mongodb-url]]
         [warklet.util :only [hash-sha-512]])
   (:import [org.bson.types ObjectId]))
 
@@ -9,11 +10,9 @@
   "Connect to specified url. if url doesn't exists, lookup environment and localhost"
   (if url
     (mg/connect-via-uri! url)
-    (let [mongodb-url (or (System/getenv "MONGOHQ_URL")   ;; for heroku
-                          (System/getProperty "PARAM1"))] ;; for beanstalk
-      (if mongodb-url
-        (mg/connect-via-uri! mongodb-url)
-        (mg/connect!)))))
+    (if mongodb-url
+      (mg/connect-via-uri! mongodb-url)
+      (mg/connect!))))
 
 (def ^{:dynamic true} *conn* (connect))
 (def ^{:dynamic true} *db* (mg/get-db *conn* "warklet"))
