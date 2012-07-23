@@ -1,11 +1,13 @@
 (ns warklet.views.user
   (:require [net.cgrand.enlive-html :as html]
             [noir.session :as session]
-            [warklet.model :as model])
+            [warklet.model :as model]
+            [oauth.client :as oauth])
   (:use [clojure.java.io :only [resource]]
         [noir.core :only [defpage url-for pre-route]]
         [noir.response :only [redirect]]
         [warklet.util :only [maybe-content]]
+        [warklet.config :only [twitter-consumer-token twitter-consumer-secret]]
         [warklet.global :only [*request*]]
         [warklet.views.base :only [base]]))
 
@@ -32,7 +34,13 @@
   (html/html-resource "warklet/template/_user_detail.html")
   [:div]
   [user]
-  [:pre] (maybe-content (get-bookmarklet user)))
+  [:pre] (maybe-content (get-bookmarklet user))
+  [:#twitter-register] (html/set-attr
+                        :href
+                        (url-for register-twitter user))
+  [:#facebook-register] (html/set-attr
+                         :href
+                         (url-for register-facebook user)))
 
 (pre-route "/users/:_id*" {:as request}
            (let [param (:params request)
@@ -42,7 +50,8 @@
                {:status 404
                 :body (format "User[id: %s] doesn't exists" user-id)}
                (let [logined-user (session/get :logined-user)]
-                 (if-not (= logined-user user)
+                 (if-not (= (:_id logined-user)
+                            (:_id user))
                    {:status 403
                     :body "Permission denied"})))))
                    
@@ -64,3 +73,43 @@
 (defpage script "/users/:_id/script" {user-id :_id}
   {:headers {"content-type" "text/javascript; charset=UTF-8"}
    :body user-id})
+
+(defpage register-twitter "/users/:_id/twiter" {user-id :_id}
+  (let [user (model/get-user-by-id user-id)
+        consumer (oauth/make-consumer twitter-consumer-token
+                                      twitter-consumer-secret
+                                      "http://twitter.com/oauth/request_token"
+                                      "http://twitter.com/oauth/access_token"
+                                      "http://twitter.com/oauth/authorize"
+                                      :hmac-sha1)
+        callback-url (str (name (:scheme *request*))
+                        "://"
+                        (:server-name *request*)
+                        ":"
+                        (:server-port *request*)
+                        (url-for register-twitter-access-token user))
+        request-token (oauth/request-token consumer callback-url)
+        approval-uri (oauth/user-approval-uri consumer
+                                              (:oauth_token request-token))]
+    (session/put! :request-token request-token)
+    (redirect approval-uri)))
+
+(defpage register-twitter-access-token
+  "/users/:_id/twitter_access_token" {user-id :_id
+                                      oauth-token :oauth_token
+                                      oauth-verifier :oauth_verifier}
+  (let [user (model/get-user-by-id user-id)
+        consumer (oauth/make-consumer twitter-consumer-token
+                                      twitter-consumer-secret
+                                      "http://twitter.com/oauth/request_token"
+                                      "http://twitter.com/oauth/access_token"
+                                      "http://twitter.com/oauth/authorize"
+                                      :hmac-sha1)
+        request-token (session/get :request-token)
+        access-token (oauth/access-token consumer request-token oauth-verifier)]
+    (warklet.model/edit! (assoc user :tw-access-token access-token))
+    (redirect (url-for get-user user))))
+  
+(defpage register-facebook "/users/:_id/facebook" {user-id :_id}
+  (let [user (model/get-user-by-id user-id)]
+    user))
