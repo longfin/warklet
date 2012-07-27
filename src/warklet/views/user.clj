@@ -63,12 +63,9 @@
 (defpage post-user [:post "/users"] {:as user}
   (let [email (:email user)
         old-user (model/get-user {:email email})]
-    (if old-user
-      {:status 400
-       :body (format "Email[%s] is already registred."  email)}
-      (let [new-user (model/add! (model/map->User user))]
-        (session/put! :logined-user new-user)
-        (redirect (url-for get-user new-user))))))
+    (let [new-user (model/add! (warklet.model.User/create user))]
+      (session/put! :logined-user new-user)
+      (redirect (url-for get-user new-user)))))
 
 (defpage script "/users/:_id/script" {user-id :_id}
   {:headers {"content-type" "text/javascript; charset=UTF-8"}
