@@ -6,7 +6,7 @@
   (:use [clojure.java.io :only [resource]]
         [noir.core :only [defpage url-for pre-route]]
         [noir.response :only [redirect]]
-        [warklet.util :only [maybe-content]]
+        [warklet.util :only [maybe-content compress-js]]
         [warklet.config :only [twitter-consumer-token twitter-consumer-secret]]
         [warklet.global :only [*request*]]
         [warklet.views.base :only [base]]))
@@ -25,10 +25,9 @@
                         ":"
                         (:server-port *request*)
                         (url-for script user))]
-    (clojure.string/replace
-      (clojure.string/replace source "{{script-url}}" script-url)
-      #"\s"
-      "")))
+    (str "javascript:"
+         (clojure.string/replace source "{{script-url}}" script-url))))
+
 
 (html/defsnippet user-detail-div
   (html/html-resource "warklet/template/_user_detail.html")
