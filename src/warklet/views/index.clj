@@ -35,7 +35,7 @@
           (redirect (url-for warklet.views.user/get-user old-user)))
         (do
           (session/flash-put!
-           (str "Email or password is incorrect. please try again" (:password old-user)))
+           (str "Email or password is incorrect. please try again"))
           (redirect (url-for welcome))))
       (warklet.views.user/post-user user))))
 
