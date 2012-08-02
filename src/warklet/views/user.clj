@@ -4,6 +4,7 @@
             [warklet.model :as model]
             [oauth.client :as oauth])
   (:use [clojure.java.io :only [resource]]
+        [clojure.data.json :only [json-str]]
         [noir.core :only [defpage url-for pre-route]]
         [noir.response :only [redirect]]
         [warklet.util :only [maybe-content compress-js]]
@@ -17,18 +18,30 @@
   [url]
   [:a] (html/set-attr :href url))
 
+(defmacro external-url-for [& args]
+  `(let [url# (url-for ~@args)]
+     (str (name (:scheme *request*))
+          "://"
+          (:server-name *request*)
+          ":"
+          (:server-port *request*)
+          url#)))
+  
 (defn- get-bookmarklet [user]
   (let [source (slurp (resource "warklet/template/bookmark.js"))
-        script-url (str (name (:scheme *request*))
-                        "://"
-                        (:server-name *request*)
-                        ":"
-                        (:server-port *request*)
-                        (url-for script user))]
+        script-url (external-url-for script user)]
     (str "javascript:"
          (clojure.string/replace source "{{script-url}}" script-url))))
 
-
+(defn- get-script [access-token]
+  (let [source (slurp (resource "warklet/template/script.js"))]
+    (clojure.string/replace
+     (clojure.string/replace source
+                             "{{access-token}}"
+                             access-token)
+     "{{url}}"
+     (external-url-for post-url))))
+                            
 (html/defsnippet user-detail-div
   (html/html-resource "warklet/template/_user_detail.html")
   [:div]
@@ -66,9 +79,9 @@
       (session/put! :logined-user new-user)
       (redirect (url-for get-user new-user)))))
 
-(defpage script "/users/:_id/script" {user-id :_id}
+(defpage script "/scripts/:access-token" {access-token :access-token}
   {:headers {"content-type" "text/javascript; charset=UTF-8"}
-   :body user-id})
+   :body (get-script access-token)})
 
 (defpage register-twitter "/users/:_id/twiter" {user-id :_id}
   (let [user (model/get-user-by-id user-id)
@@ -109,3 +122,14 @@
 (defpage register-facebook "/users/:_id/facebook" {user-id :_id}
   (let [user (model/get-user-by-id user-id)]
     user))
+
+(defpage post-url "/post" {callback :callback
+                           access-token :access_token
+                           url :url}
+  (if-let [user (model/get-user {:access-token access-token})]
+    (let [status (try
+                   (.post user url)
+                   :success
+                   (catch Exception e
+                     :error))]
+      (str callback "(" (json-str {:status (name status)}) ")"))))

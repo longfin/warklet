@@ -1,6 +1,8 @@
 (ns warklet.model
   (:require [monger.core :as mg]
-            [monger.collection :as mc])
+            [monger.collection :as mc]
+            [twitter]
+            [oauth.client :as oauth])
   (:use [clojure.string :only [lower-case split]]
         [warklet.config :only [mongodb-url]]
         [warklet.util :only [hash-sha-512]])
@@ -28,6 +30,10 @@
   (add! [e])
   (edit! [e])
   (remove! [e]))
+
+(defprotocol IPostable
+  "Protocol of postable entity(ex User)"
+  (post [e message]))
 
 (extend-protocol IDocumentable
   java.lang.String
@@ -75,6 +81,21 @@
                  access-token
                  fb-access-token
                  tw-access-token]
+  IPostable
+  (post [u message]
+    (if-let [tw-access-token (:tw-access-token u)]
+      (let [oauth-consumer (oauth/make-consumer warklet.config/twitter-consumer-token
+                                                warklet.config/twitter-consumer-secret
+                                                "https://api.twitter.com/oauth/request_token"
+                                                "https://api.twitter.com/oauth/access_token"
+                                                "https://api.twitter.com/oauth/authorize"
+                                                :hmac-sha1)
+            oauth-token (:oauth_token tw-access-token)
+            oauth-token-secret (:oauth_token_secret tw-access-token)]
+        (twitter/with-oauth oauth-consumer
+          oauth-token
+          oauth-token-secret
+          (twitter/update-status message)))))
   Object
   (toString [_]
     (format "User<_id=%s, email=%s>" _id email)))
