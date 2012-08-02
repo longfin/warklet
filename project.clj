@@ -14,7 +14,8 @@
             [swank-clojure "1.3.3"]]
   :ring {:handler warklet.server/handler}
   :js {:deploy "src/warklet/template/"
-       :bundles ["bookmark.js" ["bookmark.js"]]}
+       :bundles ["bookmark.js" ["bookmark.js"]
+                 "script.js" ["script.js"]]}
   :main warklet.server)
 
 (require 'leiningen.core
