@@ -7,6 +7,7 @@
                  [clojure-twitter "1.2.6-SNAPSHOT"]
                  [clj-oauth "1.3.1-SNAPSHOT"]
                  [oauthentic "0.0.6"]
+                 [com.draines/postal "1.8.0"]
                  [com.yahoo.platform.yui/yuicompressor "2.4.7"]]
   :plugins [[lein-beanstalk "0.2.2"]
             [lein-ring "0.7.1"]
