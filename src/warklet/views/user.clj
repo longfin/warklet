@@ -8,7 +8,6 @@
         [noir.core :only [defpage url-for pre-route]]
         [noir.response :only [redirect]]
         [warklet.util :only [maybe-content compress-js]]
-        [warklet.config :only [twitter-consumer-token twitter-consumer-secret]]
         [warklet.global :only [*request*]]
         [warklet.views.base :only [base]]))
 
@@ -85,20 +84,14 @@
 
 (defpage register-twitter "/users/:_id/twiter" {user-id :_id}
   (let [user (model/get-user-by-id user-id)
-        consumer (oauth/make-consumer twitter-consumer-token
-                                      twitter-consumer-secret
-                                      "http://twitter.com/oauth/request_token"
-                                      "http://twitter.com/oauth/access_token"
-                                      "http://twitter.com/oauth/authorize"
-                                      :hmac-sha1)
         callback-url (str (name (:scheme *request*))
                         "://"
                         (:server-name *request*)
                         ":"
                         (:server-port *request*)
                         (url-for register-twitter-access-token user))
-        request-token (oauth/request-token consumer callback-url)
-        approval-uri (oauth/user-approval-uri consumer
+        request-token (oauth/request-token twitter-consumer callback-url)
+        approval-uri (oauth/user-approval-uri twitter-consumer
                                               (:oauth_token request-token))]
     (session/put! :request-token request-token)
     (redirect approval-uri)))
@@ -108,14 +101,10 @@
                                       oauth-token :oauth_token
                                       oauth-verifier :oauth_verifier}
   (let [user (model/get-user-by-id user-id)
-        consumer (oauth/make-consumer twitter-consumer-token
-                                      twitter-consumer-secret
-                                      "http://twitter.com/oauth/request_token"
-                                      "http://twitter.com/oauth/access_token"
-                                      "http://twitter.com/oauth/authorize"
-                                      :hmac-sha1)
         request-token (session/get :request-token)
-        access-token (oauth/access-token consumer request-token oauth-verifier)]
+        access-token (oauth/access-token twitter-consumer
+                                         request-token
+                                         oauth-verifier)]
     (warklet.model/edit! (assoc user :tw-access-token access-token))
     (redirect (url-for get-user user))))
   
