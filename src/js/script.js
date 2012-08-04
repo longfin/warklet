@@ -1,13 +1,9 @@
 (function(window){
-//    var accessToken = "{{access-token}}";
-    var accessToken = "a24ca6c9c4e9c0b1c6fce9b612c282bac6bd33fc76947f24f550acb73a64e0d43f84b6d97d4a72a6aedb6795a78f1df9acd9e98612b89372b983ae378faa";
-//    var postUrl = "{{url}}";
-    var postUrl = "http://localhost:8080/post";
+    var postUrl = "{{url}}";
     var send = function ($) {
         $.ajax(postUrl, {
             dataType : "jsonp",
             data: $.param({
-                access_token: accessToken,
                 url: location.href
             }),
             type: "post",

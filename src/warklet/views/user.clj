@@ -25,14 +25,11 @@
     (str "javascript:"
          (clojure.string/replace source "{{script-url}}" script-url))))
 
-(defn- get-script [access-token]
+(defn- get-script [user]
   (let [source (slurp (resource "warklet/template/script.js"))]
-    (clojure.string/replace
-     (clojure.string/replace source
-                             "{{access-token}}"
-                             access-token)
-     "{{url}}"
-     (external-url-for post-url))))
+    (clojure.string/replace source
+                            "{{url}}"
+                            (external-url-for post-url user))))
 
 (def ^{:dynamic true} *current-user*)
 (defmacro with-current-user [& body]
@@ -61,8 +58,7 @@
                (let [logined-user (session/get :logined-user)]
                  (if-not (= (:_id logined-user)
                             (:_id user))
-                   {:status 403
-                    :body "Permission denied"})))))
+                   (redirect "/"))))))
                    
 (defpage get-user "/users/:_id" {user-id :_id}
   (with-current-user
@@ -76,9 +72,10 @@
       (session/put! :logined-user new-user)
       (redirect (url-for get-user new-user)))))
 
-(defpage script "/scripts/:access-token" {access-token :access-token}
-  {:headers {"content-type" "text/javascript; charset=UTF-8"}
-   :body (get-script access-token)})
+(defpage script "/users/:_id/script" {user-id :_id}
+  (with-current-user
+    {:headers {"content-type" "text/javascript; charset=UTF-8"}
+     :body (get-script *current-user*)}))
 
 (defpage register-twitter "/users/:_id/twiter" {user-id :_id}
   (with-current-user
@@ -111,9 +108,10 @@
   (with-current-user
     *current-user*))
 
-(defpage post-url "/post" {callback :callback
-                           access-token :access_token
-                           url :url}
+(defpage post-url "/users/:_id/post" {user-id :_id
+                                      callback :callback
+                                      access-token :access_token
+                                      url :url}
   (with-current-user
     (if *current-user*
       (let [status (try
