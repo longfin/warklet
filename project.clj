@@ -12,7 +12,7 @@
   :plugins [[lein-beanstalk "0.2.2"]
             [lein-ring "0.7.1"]
             [lein-js "0.1.1-SNAPSHOT"]
-            [swank-clojure "1.3.3"]]
+            [lein-swank "1.4.4"]]
   :ring {:handler warklet.server/handler}
   :js {:deploy "src/warklet/template/"
        :bundles ["bookmark.js" ["bookmark.js"]
