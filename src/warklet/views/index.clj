@@ -16,7 +16,7 @@
   [:#entrance-form] (html/set-attr :action action))
 
 (defn index []
-  (let [flash (session/flash-get)]
+  (let [flash (session/flash-get :index)]
     (base {:content (login-form {:action (url-for login)})
            :flash flash
            :title "Share link via bookmarklet."})))
@@ -35,6 +35,7 @@
           (redirect (url-for warklet.views.user/get-user old-user)))
         (do
           (session/flash-put!
+           :index
            (str "Email or password is incorrect. please try again"))
           (redirect (url-for welcome))))
       (warklet.views.user/post-user user))))

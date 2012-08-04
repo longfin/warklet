@@ -1,7 +1,9 @@
 (ns warklet.util
   (:require [net.cgrand.enlive-html :as html])
   (:use [clojure.string :only [join]]
-        [warklet.config :only [hash-salt]])
+        [noir.core :only [url-for]]
+        [warklet.config :only [hash-salt]]
+        [warklet.global :only [*request*]])
   (:import (java.io StringReader
                     StringWriter)
            (com.yahoo.platform.yui.compressor JavaScriptCompressor)))
@@ -27,7 +29,12 @@
         comp (JavaScriptCompressor. reader nil)]
     (.compress comp writer 0 false false false false)
     (str writer)))
-               
-    
-        
-                                   
+
+(defmacro external-url-for [& args]
+  `(let [url# (url-for ~@args)]
+     (str (name (:scheme *request*))
+          "://"
+          (:server-name *request*)
+          ":"
+          (:server-port *request*)
+          url#)))

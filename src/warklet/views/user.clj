@@ -5,9 +5,10 @@
             [oauth.client :as oauth])
   (:use [clojure.java.io :only [resource]]
         [clojure.data.json :only [json-str]]
-        [noir.core :only [defpage url-for pre-route]]
+        [noir.core :only [defpage url-for pre-route post-route]]
+        [noir.server :only [wrap-route]]
         [noir.response :only [redirect]]
-        [warklet.util :only [maybe-content compress-js]]
+        [warklet.util :only [maybe-content compress-js external-url-for]]
         [warklet.global :only [*request*]]
         [warklet.oauth :only [twitter-consumer]]
         [warklet.views.base :only [base]]))
@@ -17,15 +18,6 @@
   [:li]
   [url]
   [:a] (html/set-attr :href url))
-
-(defmacro external-url-for [& args]
-  `(let [url# (url-for ~@args)]
-     (str (name (:scheme *request*))
-          "://"
-          (:server-name *request*)
-          ":"
-          (:server-port *request*)
-          url#)))
   
 (defn- get-bookmarklet [user]
   (let [source (slurp (resource "warklet/template/bookmark.js"))
@@ -41,7 +33,12 @@
                              access-token)
      "{{url}}"
      (external-url-for post-url))))
-                            
+
+(def ^{:dynamic true} *current-user*)
+(defmacro with-current-user [& body]
+  `(binding [*current-user* (session/get :logined-user)]
+     ~@body))
+
 (html/defsnippet user-detail-div
   (html/html-resource "warklet/template/_user_detail.html")
   [:div]
@@ -68,9 +65,9 @@
                     :body "Permission denied"})))))
                    
 (defpage get-user "/users/:_id" {user-id :_id}
-  (let [user (model/get-user-by-id user-id)]
+  (with-current-user
     (base {:top-right-nav (logout-li "/logout")
-           :content (user-detail-div user)})))
+           :content (user-detail-div *current-user*)})))
 
 (defpage post-user [:post "/users"] {:as user}
   (let [email (:email user)
@@ -84,42 +81,44 @@
    :body (get-script access-token)})
 
 (defpage register-twitter "/users/:_id/twiter" {user-id :_id}
-  (let [user (model/get-user-by-id user-id)
-        callback-url (str (name (:scheme *request*))
-                        "://"
-                        (:server-name *request*)
-                        ":"
-                        (:server-port *request*)
-                        (url-for register-twitter-access-token user))
-        request-token (oauth/request-token twitter-consumer callback-url)
-        approval-uri (oauth/user-approval-uri twitter-consumer
-                                              (:oauth_token request-token))]
-    (session/put! :request-token request-token)
-    (redirect approval-uri)))
+  (with-current-user
+    (let [callback-url (str (name (:scheme *request*))
+                            "://"
+                            (:server-name *request*)
+                            ":"
+                            (:server-port *request*)
+                            (url-for register-twitter-access-token
+                                     *current-user*))
+          request-token (oauth/request-token twitter-consumer callback-url)
+          approval-uri (oauth/user-approval-uri twitter-consumer
+                                                (:oauth_token request-token))]
+      (session/put! :request-token request-token)
+      (redirect approval-uri))))
 
 (defpage register-twitter-access-token
   "/users/:_id/twitter_access_token" {user-id :_id
                                       oauth-token :oauth_token
                                       oauth-verifier :oauth_verifier}
-  (let [user (model/get-user-by-id user-id)
-        request-token (session/get :request-token)
-        access-token (oauth/access-token twitter-consumer
-                                         request-token
-                                         oauth-verifier)]
-    (warklet.model/edit! (assoc user :tw-access-token access-token))
-    (redirect (url-for get-user user))))
+  (with-current-user
+    (let [request-token (session/get :request-token)
+          access-token (oauth/access-token twitter-consumer
+                                           request-token
+                                           oauth-verifier)]
+      (warklet.model/edit! (assoc *current-user* :tw-access-token access-token))
+      (redirect (url-for get-user *current-user*)))))
   
 (defpage register-facebook "/users/:_id/facebook" {user-id :_id}
-  (let [user (model/get-user-by-id user-id)]
-    user))
+  (with-current-user
+    *current-user*))
 
 (defpage post-url "/post" {callback :callback
                            access-token :access_token
                            url :url}
-  (if-let [user (model/get-user {:access-token access-token})]
-    (let [status (try
-                   (.post user url)
-                   :success
-                   (catch Exception e
-                     :error))]
-      (str callback "(" (json-str {:status (name status)}) ")"))))
+  (with-current-user
+    (if *current-user*
+      (let [status (try
+                     (.post *current-user* url)
+                     :success
+                     (catch Exception e
+                       :error))]
+        (str callback "(" (json-str {:status (name status)}) ")")))))

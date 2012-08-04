@@ -2,7 +2,7 @@
   :description "Share link to twitter and facebook via bookmark."
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [com.novemberain/monger "1.1.0"]
-                 [noir "1.2.2"]
+                 [noir "1.3.0-beta10"]
                  [enlive "1.0.1"]
                  [clojure-twitter "1.2.6-SNAPSHOT"]
                  [clj-oauth "1.3.1-SNAPSHOT"]
