@@ -22,6 +22,7 @@
 (require 'leiningen.core
          'leiningen.run
          'leiningen.ring
+         'leiningen.beanstalk
          'leiningen.js)
 (defmacro append-js [task]
   `(leiningen.core/prepend-tasks
@@ -31,3 +32,5 @@
 
 (append-js #'leiningen.run/run)
 (append-js #'leiningen.ring/ring)
+(append-js #'leiningen.beanstalk/deploy)
+
