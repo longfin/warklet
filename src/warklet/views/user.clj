@@ -9,6 +9,7 @@
         [noir.response :only [redirect]]
         [warklet.util :only [maybe-content compress-js]]
         [warklet.global :only [*request*]]
+        [warklet.oauth :only [twitter-consumer]]
         [warklet.views.base :only [base]]))
 
 (html/defsnippet logout-li
