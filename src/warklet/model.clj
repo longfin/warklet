@@ -60,14 +60,14 @@
 (defmacro defgetters [type]
   "Helper macro to make typed-getters.(get-<type>-by-id, get-<type>)"
   (let [name (docname type)
-        map-> (symbol (str "map->" type))
+        constructor (symbol (str type "/create"))
         fn-get-by-id (symbol (str "get-" name "-by-id"))
         fn-get (symbol (str "get-" name))]
     `(do
        (defn ~fn-get [p#]
          (let [m# (mc/find-one-as-map ~name p#)]
            (when m#
-             (~map-> m#))))
+             (~constructor m#))))
        (defn ~fn-get-by-id [id#]
          (try
            (~fn-get {:_id (ObjectId. id#)})
