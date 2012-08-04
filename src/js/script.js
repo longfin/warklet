@@ -4,11 +4,10 @@
         $.ajax(postUrl, {
             dataType : "jsonp",
             data: $.param({
-                url: location.href
+                message: document.title+ " " + location.href
             }),
-            type: "post",
             success: function(data){
-                alert(data);
+                console.log(data.status);
             },
             complete : function(ret){
             }

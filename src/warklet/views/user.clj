@@ -111,11 +111,11 @@
 (defpage post-url "/users/:_id/post" {user-id :_id
                                       callback :callback
                                       access-token :access_token
-                                      url :url}
+                                      message :message}
   (with-current-user
     (if *current-user*
       (let [status (try
-                     (.post *current-user* url)
+                     (.post *current-user* message)
                      :success
                      (catch Exception e
                        :error))]
