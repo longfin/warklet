@@ -13,7 +13,8 @@
             [lein-ring "0.7.1"]
             [lein-js "0.1.1-SNAPSHOT"]
             [lein-swank "1.4.4"]]
-  :ring {:handler warklet.server/handler}
+  :ring {:handler warklet.server/handler
+         :init warklet.server/init}
   :js {:deploy "src/warklet/template/"
        :bundles ["bookmark.js" ["bookmark.js"]
                  "script.js" ["script.js"]]}

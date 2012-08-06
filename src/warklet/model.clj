@@ -8,18 +8,25 @@
         [warklet.oauth :only [twitter-consumer]])
   (:import [org.bson.types ObjectId]))
 
-(defn connect [& url]
-  "Connect to specified url. if url doesn't exists, lookup environment and localhost"
-  (if url
-    (mg/connect-via-uri! url)
-    (if mongodb-url
-      (mg/connect-via-uri! mongodb-url)
-      (mg/connect!))))
+(def ^{:dynamic true} *conn* (atom nil))
+(def ^{:dynamic true} *db* (atom nil))
 
-(def ^{:dynamic true} *conn* (connect))
-(def ^{:dynamic true} *db* (mg/get-db *conn* "warklet"))
-(when *db*
-  (mg/set-db! *db*))
+(defn connect! [& url]
+  "Connect to specified url. if url doesn't exists, lookup environment and localhost"
+  (swap! *conn*
+         (fn [_]
+           (if url
+             (mg/connect-via-uri! url)
+             (if mongodb-url
+               (mg/connect-via-uri! mongodb-url)
+               (mg/connect!))))))
+         
+
+(defn set-db! [conn]
+  (if-let [db (mg/get-db conn "warklet")]
+    (swap! *db*
+           (fn [_]
+             (mg/set-db! db)))))
 
 (defprotocol IDocumentable
   "Representable protocol for mongodb's document name"
@@ -107,4 +114,6 @@
                     (origin-add! encrypted-user)))}))
 
 (defgetters User)
-(mc/ensure-index (docname User) {:email 1} {:unique true})
+(defn init-index []
+  (mc/ensure-index (docname User) {:email 1} {:unique true}))
+
