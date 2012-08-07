@@ -1,10 +1,12 @@
 (function(window){
     var postUrl = "{{url}}";
     var send = function ($) {
+        var comment = prompt("Comment about...", document.title);
         $.ajax(postUrl, {
             dataType : "jsonp",
             data: $.param({
-                message: document.title+ " " + location.href
+                comment: comment,
+                url: location.href
             }),
             success: function(data){
 				alert("Posted successfully.");

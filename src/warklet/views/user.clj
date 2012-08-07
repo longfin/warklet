@@ -113,12 +113,16 @@
 (defpage post-url "/users/:_id/post" {user-id :_id
                                       callback :callback
                                       access-token :access_token
-                                      message :message}
-  (with-current-user
-    (if *current-user*
-      (let [status (try
-                     (.post *current-user* message)
-                     :success
-                     (catch Exception e
-                       :error))]
-        (str callback "(" (json-str {:status (name status)}) ")")))))
+                                      url :url
+                                      comment :comment}
+  (let [elipsed (if (< (.length comment) 80)
+                  comment
+                  (str (.substring comment 0 80) "..."))]
+    (with-current-user
+      (if *current-user*
+        (let [status (try
+                       (.post *current-user* (str elipsed " " url))
+                       :success
+                       (catch Exception e
+                         :error))]
+          (str callback "(" (json-str {:status (name status)}) ")"))))))
