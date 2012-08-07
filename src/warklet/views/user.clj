@@ -58,7 +58,9 @@
                (let [logined-user (session/get :logined-user)]
                  (if-not (= (:_id logined-user)
                             (:_id user))
-                   (redirect "/"))))))
+                   (if (= (:* param) "/script")
+                     {:status 403}
+                     (redirect "/")))))))
                    
 (defpage get-user "/users/:_id" {user-id :_id}
   (with-current-user
